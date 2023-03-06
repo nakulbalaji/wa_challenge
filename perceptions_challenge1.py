@@ -24,40 +24,40 @@ criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
 flags = cv2.KMEANS_RANDOM_CENTERS
 compactness, labels, centers = cv2.kmeans(pixels, num_clusters, None, criteria, 10, flags)
 
-with_centroids = centers[labels.flatten()].reshape(gray.shape)
+centrs = centers[labels.flatten()].reshape(gray.shape)
 # I dilated the kernel so that the small details aren't picked up on, overcomplicating it
 # 20x20 was a satisfiable amount
 kernel = np.ones((20,20),np.uint8)
-dilated_contours = cv2.dilate(with_centroids, kernel, iterations=1)
+dilated = cv2.dilate(centrs, kernel, iterations=1)
 
 # Finding contours of orange items (cones), and printing it for testing purposes
 # prints the number contours, which adds up with the cones
-contours, hierarchy = cv2.findContours(dilated_contours.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+contours, hierarchy = cv2.findContours(dilated.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 print("Number of contours found:", len(contours))
 
 # sorting contours from left to right so that left and right can be displayed
 contours = sorted(contours, key=lambda x: cv2.boundingRect(x)[0])
 
 # split into left and right cone "columns" using contours array
-midpoint = int(len(contours) / 2)
-left_contours = contours[:midpoint]
-right_contours = contours[midpoint:]
+middle = int(len(contours) / 2)
+left_contours = contours[:middle]
+right_contours = contours[middle:]
 
 # get the best fit line for left side using fitLine()
-points = np.vstack([c[:, 0] for c in left_contours])
-vx, vy, cx, cy = cv2.fitLine(points, cv2.DIST_L2, 0, 0.01, 0.01)
-lefty = int((-cx*vy/vx) + cy)
-righty = int(((w-cx)*vy/vx)+cy)
+pts = np.vstack([c[:, 0] for c in left_contours])
+vx, vy, cx, cy = cv2.fitLine(pts, cv2.DIST_L2, 0, 0.01, 0.01)
+left = int((-cx*vy/vx) + cy)
+right = int(((w-cx)*vy/vx)+cy)
 #print red lines on left side
-cv2.line(image,(w-1,righty),(0,lefty),(0,0,255),4)
+cv2.line(image,(w-1,right),(0,left),(0,0,255),4)
 
 # get the best fit line for right side using fitLine()
-points = np.vstack([c[:, 0] for c in right_contours])
-vx, vy, cx, cy = cv2.fitLine(points, cv2.DIST_L2, 0, 0.01, 0.01)
-lefty = int((-cx*vy/vx) + cy)
-righty = int(((w-cx)*vy/vx)+cy)
+pts = np.vstack([c[:, 0] for c in right_contours])
+vx, vy, cx, cy = cv2.fitLine(pts, cv2.DIST_L2, 0, 0.01, 0.01)
+left = int((-cx*vy/vx) + cy)
+right = int(((w-cx)*vy/vx)+cy)
 #print red lines on right side
-cv2.line(image,(w-1,righty),(0,lefty),(0,0,255),4)
+cv2.line(image,(w-1,right),(0,left),(0,0,255),4)
 
 #save to answer.png and display for testing
 cv2.imwrite('answer.png',image)
